@@ -1,0 +1,3 @@
+../Core/Src/mgr_com.c:35:6:Com_Task	2
+../Core/Src/mgr_com.c:45:6:Update_FW_ComTask	49
+../Core/Src/mgr_com.c:366:6:reset_microcontroller	1
