@@ -1,2 +1,0 @@
-../Core/Src/drive_gpio.c:14:6:ISR_Led_HU	16	static
-../Core/Src/drive_gpio.c:21:6:LED_RUN	16	static

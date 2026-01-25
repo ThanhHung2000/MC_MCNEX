@@ -1,4 +1,0 @@
-../modbus_rtu/modbus_slaver_comp.c:23:6:PacketComp_Init	4	static
-../modbus_rtu/modbus_slaver_comp.c:34:6:ModbusSlaverComp_Init	8	static
-../modbus_rtu/modbus_slaver_comp.c:40:6:ModbusSlaverComp_SendData	16	static
-../modbus_rtu/modbus_slaver_comp.c:48:6:ModbusSlaverComp_Run	8	static

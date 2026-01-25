@@ -1,2 +1,0 @@
-../Core/Src/can_par.c:56:6:CAN_RX_IndicationFct	16	static
-../Core/Src/can_par.c:100:6:CanRxCGW1IndicationFct	16	static

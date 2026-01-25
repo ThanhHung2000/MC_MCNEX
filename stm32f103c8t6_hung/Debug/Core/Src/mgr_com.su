@@ -1,3 +1,0 @@
-../Core/Src/mgr_com.c:35:6:Com_Task	8	static
-../Core/Src/mgr_com.c:45:6:Update_FW_ComTask	32	static
-../Core/Src/mgr_com.c:366:6:reset_microcontroller	16	static
