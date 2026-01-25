@@ -9,10 +9,7 @@
 #include "drive.h"
 #include <stdlib.h>
 #include "modbusSlave.h"
-#define NUM_AXIT_ROBOT 0x03
-#define AXIT_X_ROBOT   0x00
-#define AXIT_Y_ROBOT   0x01
-#define AXIT_Z_ROBOT   0x02
+
 // Mảng chứa 46 giá trị Jerk (đơn vị: Hz/ms^2)
 // Tính theo công thức: (Fmax - 1000) / (200 * 401)
 // với jerk_table[0] tương ứng với Fmax=1000 Hz
@@ -32,6 +29,8 @@ const float triangle_array[TIME_RAMPING] = {
     2016, 2080, 2145, 2211, 2278, 2346, 2415, 2485, 2556, 2628, 2701, 2775, 2850, 2926, 3003, 3081, 3160, 3240, 3321, 3403, 3486,
     3570, 3655, 3741, 3828, 3916, 4005, 4095, 4186, 4278, 4371, 4465, 4560, 4656, 4753, 4851, 4950, 5050
 };
+
+
 const uint16_t my_array[400]={0,};
 void Set_Direction_OX(uint8_t status);
 void Set_Direction_OY(uint8_t status);
@@ -61,18 +60,21 @@ void Robot_Init(void)
 	Rotbot_axis[AXIT_X_ROBOT].channel=TIM_CHANNEL_1;
 	Rotbot_axis[AXIT_X_ROBOT].channel_counter=TIM_CHANNEL_2;
 	Rotbot_axis[AXIT_X_ROBOT].Set_Direction_Pin=Set_Direction_OX;
+	Rotbot_axis[AXIT_X_ROBOT].max_axis=55000U;
 	// TRỤC Y
 	Rotbot_axis[AXIT_Y_ROBOT].htim= &htim3;
 	Rotbot_axis[AXIT_Y_ROBOT].htim_counter= &htim5;
 	Rotbot_axis[AXIT_Y_ROBOT].channel=TIM_CHANNEL_1;
 	Rotbot_axis[AXIT_Y_ROBOT].channel_counter=TIM_CHANNEL_1;
 	Rotbot_axis[AXIT_Y_ROBOT].Set_Direction_Pin=Set_Direction_OY;
+	Rotbot_axis[AXIT_Y_ROBOT].max_axis=28000U;
 	// TRỤC Z
 	Rotbot_axis[AXIT_Z_ROBOT].htim= &htim8;
 	Rotbot_axis[AXIT_Z_ROBOT].htim_counter= &htim4;
 	Rotbot_axis[AXIT_Z_ROBOT].channel=TIM_CHANNEL_3;
 	Rotbot_axis[AXIT_Z_ROBOT].channel_counter=TIM_CHANNEL_1;
 	Rotbot_axis[AXIT_Z_ROBOT].Set_Direction_Pin=Set_Direction_OZ;
+	Rotbot_axis[AXIT_Z_ROBOT].max_axis=15000U;
 	for(int i=0x00U;i<NUM_AXIT_ROBOT;i++)
 	{
 		Rotbot_axis[i].current_pos =0x00U;
@@ -95,12 +97,13 @@ void Robot_Init(void)
 // uint16_t accel (Gia tốc - Acceleration) Độ dốc của quá trình tăng tốc và giảm tốc.Tham số này sẽ quyết định việc bạn thay đổi giá trị ARR nhanh hay chậm trong ngắt 1ms để đạt tới speed.
 //QUAN TRỌNG: Ép cập nhật giá trị từ vùng đệm vào thanh ghi thực thi
 //axis->htim->Instance->EGR = TIM_EGR_UG;
-void MC_MoveAbsolute(MC_Axis_t* axis, uint32_t pos, uint32_t speed)// mục đích Kích hoạt di chuyển đến vị trí tuyệt đối
+void MC_MoveAbsolute(MC_Axis_t* axis, int32_t pos, uint32_t speed)// mục đích Kích hoạt di chuyển đến vị trí tuyệt đối
 {
 // 1. Kiểm tra nếu trục đang bận hoặc có lỗi thì không nhận lệnh mới (Tùy logic)
 	if(axis->state == AXIS_ERROR || axis->busy == 0x01) return;
 
 	// 2. Gán các tham số mục tiêu
+	if(pos >= axis->max_axis) pos=axis->max_axis;
 	axis->target_pos = pos;
 	axis->target_speed = speed;
 	axis->accel = jerk_table[(speed/(uint32_t)1000)-1] ;// speed là 1k đến 50k
@@ -143,12 +146,20 @@ void MC_Stop(MC_Axis_t* axis)// mục đích Kích hoạt dừng tuyệt đối 
 		axis->offset=0x01U;
 	}
 }
+
 void MC_MoveAbsoluteTest(uint32_t posx,uint32_t posy,uint32_t posz, uint32_t freq)// freq sẽ nhận giá trị 1k đến 50k
 {
 	// Tạo 1 mảng
 	MC_MoveAbsolute(&Rotbot_axis[0],posx,freq);//max 50kHz
 	MC_MoveAbsolute(&Rotbot_axis[1],posy,freq);//max 50kHz
 	MC_MoveAbsolute(&Rotbot_axis[2],posz,freq);//max 50kHz
+}
+
+void MC_MoveRelative(MC_Axis_t* axis,int32_t distance,uint32_t freq )
+{
+	int32_t taget_move=0x00U;
+	taget_move = axis->current_pos + distance;
+	MC_MoveAbsolute(axis,taget_move,freq);
 }
 uint8_t MC_MoveHomeAbsolute(MC_Axis_t* axis)
 {
@@ -173,6 +184,33 @@ uint8_t MC_MoveLinear(int32_t posx,int32_t posy,int32_t posz,float freq_max )// 
 	MC_MoveAbsolute(&Rotbot_axis[0],posx,freqx);
 	MC_MoveAbsolute(&Rotbot_axis[1],posy,freqy);
 	return 0x01U;
+}
+void MC_MoveHandle(uint8_t axis,uint8_t status, int dir)
+{
+	int32_t max_distance =0x00U;
+	switch(status)
+	{
+		case 0x01:// jogging
+		{
+			max_distance = dir>0 ? Rotbot_axis[axis].max_axis - Rotbot_axis[axis].current_pos : Rotbot_axis[axis].current_pos;
+
+			MC_MoveRelative(&Rotbot_axis[axis],dir*max_distance,10000);//max 50kHz
+		}
+		break;
+		case 0x02:// step
+		{
+			//MC_MoveRelative(&Rotbot_axis[axis],dir*200,5000);
+		}
+		break;
+		case 0x03:// stop
+		{
+			MC_Stop(&Rotbot_axis[axis]);
+		}
+		break;
+
+		default:
+		break;
+	}
 }
 void Rotbot_controler(MC_Axis_t* axis)
 {

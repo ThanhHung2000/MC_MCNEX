@@ -136,6 +136,7 @@ int main(void)
 		if(time_on==0x01)
 		{
 			Task_scan_HMI();
+			//Task_Run_HMI();
 		}
 
     /* USER CODE END WHILE */

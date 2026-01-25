@@ -9,7 +9,8 @@
 #define INC_MGR_HMI_H_
 
 void Task_scan_HMI(void);
-void Handle_Home(void);
+void Task_Run_HMI(void);
+void Handle_Home(uint8_t data);
 void Choose_glass_group(uint8_t num);
 
 #endif /* INC_MGR_HMI_H_ */

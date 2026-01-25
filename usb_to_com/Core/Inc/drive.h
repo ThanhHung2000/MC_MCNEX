@@ -14,6 +14,12 @@
 #define  MAX_Axis_OX					55000U
 #define  MAX_Axis_OX					55000U
 #define  MAX_Axis_OX					55000U
+
+#define NUM_AXIT_ROBOT 0x03
+#define AXIT_X_ROBOT   0x00
+#define AXIT_Y_ROBOT   0x01
+#define AXIT_Z_ROBOT   0x02
+
 typedef struct {
     uint32_t target_freq;    // Tần số đích (Tốc độ)
     uint32_t total_pulses;   // Tổng số xung cần phát (Vị trí)
@@ -58,6 +64,7 @@ typedef struct {
 	uint8_t error;   // Bằng 1 khi trục gặp sự cố
 	uint8_t active;  // Bằng 1 khi trục đang có quyền điều khiển hardware
 	uint8_t indexaxis;
+	int32_t max_axis;
 
 } MC_Axis_t;
 
@@ -66,4 +73,8 @@ void Robot_Init(void);
 void  MC_Control_Interrupt(void);
 void MC_MoveAbsoluteTest(uint32_t posx,uint32_t posy,uint32_t posz, uint32_t freq);
 uint8_t MC_MoveLinear(int32_t posx,int32_t posy,int32_t posz,float freq_max );
+void MC_MoveAbsolute(MC_Axis_t* axis, int32_t pos, uint32_t speed);// mục đích Kích hoạt di chuyển đến vị trí tuyệt đối
+void MC_MoveRelative(MC_Axis_t* axis,int32_t distance,uint32_t freq );
+void MC_MoveHandle(uint8_t axis,uint8_t status, int dir);
+extern MC_Axis_t Rotbot_axis[NUM_AXIT_ROBOT];
 #endif /* INC_DRIVE_H_ */
