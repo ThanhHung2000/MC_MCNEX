@@ -1,0 +1,6 @@
+../modbus/delay.c:14:6:Delay_Init	8	static
+../modbus/delay.c:18:6:delay_us	24	static,ignoring_inline_asm
+../modbus/delay.c:31:6:delay_ms	16	static
+../modbus/delay.c:40:6:HAL_TIM_PeriodElapsedCallback	16	static
+../modbus/delay.c:50:6:TIM6_DAC_IRQHandler	8	static
+../modbus/delay.c:61:6:MX_TIM6_Init	16	static
