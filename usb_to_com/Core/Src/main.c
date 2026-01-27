@@ -122,6 +122,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   Init_Timer_chanal();
+  HAL_Delay(5000);// đồng bộ với Hdmi
   Robot_Init();
   Delay_SetTimer(TID_TIMER_1ms,1);
   Delay_SetTimer(TID_TIMER_1000ms,5000);
@@ -734,7 +735,7 @@ static void MX_GPIO_Init(void)
                           |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14
                           |GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DIR_TIM3_Pin DIR_TIM8_Pin */

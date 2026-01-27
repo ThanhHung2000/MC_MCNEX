@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "modbusSlave.h"
 #include "mgr_hmi.h"
+#include"dvr_gpio.h"
 // Mảng chứa 46 giá trị Jerk (đơn vị: Hz/ms^2)
 // Tính theo công thức: (Fmax - 1000) / (200 * 401)
 // với jerk_table[0] tương ứng với Fmax=1000 Hz
@@ -50,6 +51,24 @@ void Init_Timer_chanal(void)
 	HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_1);
 }
+void Reset_position(void)
+{
+	for(int i=0x00U;i<NUM_AXIT_ROBOT;i++)
+	{
+		Rotbot_axis[i].current_pos =0x00U;
+		Rotbot_axis[i].target_pos =0x00U;
+		Rotbot_axis[i].current_speed=SET_SPEED_1000HZ;
+		Rotbot_axis[i].target_speed=0X00U;
+		Rotbot_axis[i].accel =0X00U;
+		Rotbot_axis[i].state =STANDSTILL;
+		Rotbot_axis[i].ramp_time=0x00U;
+		Rotbot_axis[i].counter_pos=0x00U;
+		Rotbot_axis[i].direction=0x00U;
+		Rotbot_axis[i].indexaxis=i;
+		Rotbot_axis[i].fulse_stop=0x00U;
+		Rotbot_axis[i].offset=0x00U;
+	}
+}
 void Robot_Init(void)
 {
 	// TRỤC X
@@ -73,21 +92,7 @@ void Robot_Init(void)
 	Rotbot_axis[AXIT_Z_ROBOT].channel_counter=TIM_CHANNEL_1;
 	Rotbot_axis[AXIT_Z_ROBOT].Set_Direction_Pin=Set_Direction_OZ;
 	Rotbot_axis[AXIT_Z_ROBOT].max_axis=15000U;
-	for(int i=0x00U;i<NUM_AXIT_ROBOT;i++)
-	{
-		Rotbot_axis[i].current_pos =0x00U;
-		Rotbot_axis[i].target_pos =0x00U;
-		Rotbot_axis[i].current_speed=SET_SPEED_1000HZ;
-		Rotbot_axis[i].target_speed=0X00U;
-		Rotbot_axis[i].accel =0X00U;
-		Rotbot_axis[i].state =STANDSTILL;
-		Rotbot_axis[i].ramp_time=0x00U;
-		Rotbot_axis[i].counter_pos=0x00U;
-		Rotbot_axis[i].direction=0x00U;
-		Rotbot_axis[i].indexaxis=i;
-		Rotbot_axis[i].fulse_stop=0x00U;
-		Rotbot_axis[i].offset=0x00U;
-	}
+	Reset_position();
 }
 // MC_Axis_t quản lý thông số của truc x,y, cụ thể
 //int32_t pos vị trí đích tính theo xung, vị trí tuyệt đối so với điểm gốc
@@ -145,6 +150,7 @@ void MC_Stop(MC_Axis_t* axis)// mục đích Kích hoạt dừng tuyệt đối 
 		axis->offset=0x01U;
 	}
 }
+//Get_State_Sensor(AXIT_X_ROBOT);
 
 void MC_MoveAbsoluteTest(uint32_t posx,uint32_t posy,uint32_t posz, uint32_t freq)// freq sẽ nhận giá trị 1k đến 50k
 {
@@ -169,6 +175,128 @@ uint8_t MC_MoveHomeAbsolute(MC_Axis_t* axis)
 	{
 		axis->current_pos=0x00U;
 		return 0x01U;
+	}
+	return 0x00U;
+}
+uint8_t Motor_Busy(void)
+{
+	return (Rotbot_axis[0].busy || Rotbot_axis[1].busy);// || Rotbot_axis[2].busy) ;
+	//return (Rotbot_axis[0].busy || Rotbot_axis[1].busy || Rotbot_axis[2].busy) ;
+}
+uint8_t Move_Home_3Step(volatile uint8_t * home_tep)
+{
+	//uint8_t result=0x00U;
+	static uint8_t onetime=0x00U;
+	static uint8_t step=0x00U;
+	static uint8_t time=0x00U;
+	if( *home_tep == 0x01)
+	{
+		step=0x01U;
+		*home_tep = 0x02U;
+
+	}
+	switch(step)
+	{
+		case 0x01U:
+		{
+			// step 1 : về max 2 trục x và y là 10 cmm, NẾU chạm home ở ngắt ngoài thì cho về MC_Stop
+			if(onetime==0x00U)
+			{
+				Rotbot_axis[0].current_pos=10000;
+				Rotbot_axis[1].current_pos=5000;
+				MC_MoveAbsolute(&Rotbot_axis[0],0x00U,2000);
+				MC_MoveAbsolute(&Rotbot_axis[1],0x00U,2000);
+
+				if(Get_State_Sensor(AXIT_X_ROBOT)==0x01U) MC_Stop(&Rotbot_axis[AXIT_X_ROBOT]);
+				if(Get_State_Sensor(AXIT_Y_ROBOT)==0x01U) MC_Stop(&Rotbot_axis[AXIT_Y_ROBOT]);
+				onetime=0x01U;
+			}
+			if(Motor_Busy()==0x00U)
+			{
+				if(++time>=200U)
+				{
+					time =0x00U;
+					step=0x02U;
+					onetime=0x00U;
+				}
+			}
+		}
+		break;
+		case 0x02U:
+		{
+			// step 2 : về home max 2 trục 550cm và 280cm, NẾU chạm home ở ngắt ngoài thì cho về MC_Stop
+			if(onetime==0x00U)
+			{
+				Rotbot_axis[0].current_pos=Rotbot_axis[0].max_axis;
+				Rotbot_axis[1].current_pos=Rotbot_axis[1].max_axis;
+				MC_MoveAbsolute(&Rotbot_axis[0],0x00U,2000);
+				MC_MoveAbsolute(&Rotbot_axis[1],0x00U,2000);
+				if(Get_State_Sensor(AXIT_X_ROBOT)==0x01U) MC_Stop(&Rotbot_axis[AXIT_X_ROBOT]);// NẾU K CHẠM HOME LÀ LỖI
+				if(Get_State_Sensor(AXIT_Y_ROBOT)==0x01U) MC_Stop(&Rotbot_axis[AXIT_Y_ROBOT]);
+				onetime=0x01U;
+			}
+
+			if(Motor_Busy()==0x00U)
+			{
+				if(++time>=200U)
+				{
+					time =0x00U;
+					step=0x03U;
+					onetime=0x00U;
+				}
+
+			}
+		}
+		break;
+		case 0x03U:// đi xa khoảng 10cm mỗi trục
+		{
+			if(onetime==0x00U)
+			{
+				MC_MoveAbsolute(&Rotbot_axis[0],5000U,2000);
+				MC_MoveAbsolute(&Rotbot_axis[1],5000U,2000);
+				onetime=0x01U;
+			}
+			if(Motor_Busy()==0x00U)
+			{
+
+				if(++time>=200U)
+				{
+					time =0x00U;
+					step=0x04U;
+					onetime=0x00U;
+					Rotbot_axis[0].current_pos +=100;
+					Rotbot_axis[1].current_pos +=100;
+				}
+			}
+		}
+		break;
+		case 0x04U://
+		{
+			// step 2 : về home max 2 trục 550cm và 280cm, NẾU chạm home ở ngắt ngoài thì cho về MC_Stop
+			if(onetime==0x00U)
+			{
+				MC_MoveAbsolute(&Rotbot_axis[0],0x00U,1000);
+				MC_MoveAbsolute(&Rotbot_axis[1],0x00U,1000);
+				if(Get_State_Sensor(AXIT_X_ROBOT)==0x01U) MC_MoveHomeAbsolute(&Rotbot_axis[AXIT_X_ROBOT]);// NẾU K CHẠM HOME LÀ LỖI
+				if(Get_State_Sensor(AXIT_Y_ROBOT)==0x01U) MC_MoveHomeAbsolute(&Rotbot_axis[AXIT_Y_ROBOT]);
+				onetime=0x01U;
+			}
+
+			if(Motor_Busy()==0x00U)
+			{
+				if(++time>=200U)
+				{
+					time =0x00U;
+					onetime=0x00U;
+					return 0x01U;
+					step=0x00U;
+				}
+			}
+		}
+		break;
+
+		default:
+		break;
 	}
 	return 0x00U;
 }
@@ -240,6 +368,7 @@ void Rotbot_controler(MC_Axis_t* axis)
         		axis->fulse_stop = axis->counter_pos;
         		axis->ramp_time --;
         		axis->state = CONSTANT_VEL;
+        		if(axis->target_speed>SET_SPEED_1000HZ) axis->current_speed = axis->target_speed;
         		// TÌM Số xung đã được ramping, để khi còn lại số xung này thì giảm
         		// ĐÂY Chính là số xung còn lại axis->counter_pos
 			}
@@ -257,7 +386,6 @@ void Rotbot_controler(MC_Axis_t* axis)
             break;
 
         case CONSTANT_VEL:// chạy với tần số cố định
-        	axis->current_speed = axis->target_speed;
         	if((axis->delta_pos-axis->counter_pos) <= axis->fulse_stop)
 			{
         		axis->state = DECELERATING;
@@ -312,6 +440,7 @@ void Rotbot_controler(MC_Axis_t* axis)
 }
 void  MC_Control_Interrupt(void)
 {
+
 	if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0==0x01))
 	{
 		//MC_Stop(&Rotbot_axis[0]);

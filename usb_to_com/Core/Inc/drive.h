@@ -47,19 +47,19 @@ typedef struct {
     void (* Set_Direction_Pin)(uint8_t);
     // Thông số chuyển động
     int32_t current_pos;   // Vị trí hiện tại (số xung)
-    int32_t target_pos;    // Vị trí đích
-    int32_t delta_pos;
-    uint32_t counter_pos;
+    volatile int32_t target_pos;    // Vị trí đích
+    volatile int32_t delta_pos;
+    volatile uint32_t counter_pos;
     volatile int32_t current_speed;     // Vận tốc hiện tại (Hz)
     volatile int32_t target_speed;      // Vận tốc mục tiêu (Hz)
-    float  accel;           // Gia tốc (Hz/ms)
+    volatile float  accel;           // Gia tốc (Hz/ms)
     uint8_t direction;
-    AxisState state;       // Trạng thái hiện tại
+    volatile AxisState state;       // Trạng thái hiện tại
     uint8_t offset;
-    int32_t ramp_time;   // Bước tính toán ramp
-    uint32_t fulse_stop;   // Bước tính toán ramp
+    volatile int32_t ramp_time;   // Bước tính toán ramp
+    volatile uint32_t fulse_stop;   // Bước tính toán ramp
     // Các cờ trạng thái giống PLC
-	uint8_t busy;    // Bằng 1 khi lệnh đang thực thi (tăng tốc, chạy đều hoặc giảm tốc)
+    volatile uint8_t busy;    // Bằng 1 khi lệnh đang thực thi (tăng tốc, chạy đều hoặc giảm tốc)
 	uint8_t done;    // Bằng 1 trong 1 chu kỳ khi đã đến đúng vị trí đích
 	uint8_t error;   // Bằng 1 khi trục gặp sự cố
 	uint8_t active;  // Bằng 1 khi trục đang có quyền điều khiển hardware
@@ -74,6 +74,8 @@ void  MC_Control_Interrupt(void);
 uint8_t MC_MoveLinear(int32_t posx,int32_t posy,int32_t posz,float freq_max );// thời điểm kết thúc gần bằng nhau tuyệt đối
 void MC_MoveAbsoluteTest(uint32_t posx,uint32_t posy,uint32_t posz, uint32_t freq);
 void MC_MoveHandle(uint8_t axis,uint8_t status, int dir);
+uint8_t Move_Home_3Step(volatile uint8_t * home_tep);
+void Reset_position(void);
 //uint8_t MC_MoveLinear(int32_t posx,int32_t posy,int32_t posz,float freq_max );
 
 //void MC_MoveHandle(uint8_t axis,uint8_t status, int dir);

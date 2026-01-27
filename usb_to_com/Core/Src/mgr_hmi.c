@@ -17,6 +17,7 @@ int8_t fisrtbit=0x00U;
 uint8_t Emergency = 0;
 uint8_t Glass_group = 0;
 uint8_t save=0x00U;
+volatile uint8_t home=0x00U;
 #define HMI_STATE_BUTTON    0x01U
 typedef struct {
     uint8_t last_state;    // Trạng thái Coil ở chu kỳ 1ms trước
@@ -176,7 +177,7 @@ void Task_Run_HMI(void)
 	{
 
 	}
-	else if (Tab->bits.Motor == 1)
+	else if (Tab->bits.Motor == 1 && home==0x00U)
 	{
 		uint32_t current = ((Save_Tray -> all) << 16)|(Worker_Control->all<< 8)| (Control_motor->all);
 		fisrtbit = __builtin_ffs(current)-7;
@@ -185,6 +186,15 @@ void Task_Run_HMI(void)
 			motorMoveTable[fisrtbit].handler();
 		}
 		Task_scan_HMI();
+	}
+	else if(home !=0x00U)
+	{
+		// ĐANG VỀ HOME
+		if(Move_Home_3Step(&home))
+		{
+			Reset_position();
+			home=0x00U;
+		}
 	}
 }
 void Choose_glass_group(uint8_t num){
@@ -453,10 +463,12 @@ void Handle_Set(void)
 }
 void Handle_Home(void)
 {
+	if(home==0x00U)
+	{
+		home=0x01U;
+	}
 	// đi về hôm với với quang đường tối đa là max hoặc chạm cảm biến rồi dừng
-
 	// đi xa home 1 đoạn 10cm
-
 	// lùi lại home với tần số 1Hz, để chạm home thì đó set current_pos =0x00U;
 }
 void  Reset(void)
