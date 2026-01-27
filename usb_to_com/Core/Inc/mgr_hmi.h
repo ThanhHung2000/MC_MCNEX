@@ -7,10 +7,11 @@
 
 #ifndef INC_MGR_HMI_H_
 #define INC_MGR_HMI_H_
-
-void Task_scan_HMI(void);
+#define STATUS_IDLE_OXIS     0x00U
+#define STATUS_JOGGING_OXIS  0x01U
+#define STATUS_STEP_OXIS     0x02U
+#define STATUS_STOP_OXIS     0x03U
+#define NUM_BUTTON_HOLD      0x06U
 void Task_Run_HMI(void);
-void Handle_Home(uint8_t data);
-void Choose_glass_group(uint8_t num);
-
+void Init_hmi(void);
 #endif /* INC_MGR_HMI_H_ */

@@ -30,7 +30,7 @@ modbus/RS232.o: ../modbus/RS232.c ../modbus/RS232.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h \
- ../modbus/modbusSlave.h ../modbus/modbus_crc.h
+ ../modbus/modbusSlave.h ../modbus/modbus_crc.h ../Core/Inc/mgr_hmi.h
 ../modbus/RS232.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -65,3 +65,4 @@ modbus/RS232.o: ../modbus/RS232.c ../modbus/RS232.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h:
 ../modbus/modbusSlave.h:
 ../modbus/modbus_crc.h:
+../Core/Inc/mgr_hmi.h:

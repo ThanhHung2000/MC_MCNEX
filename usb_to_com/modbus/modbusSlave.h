@@ -35,5 +35,7 @@ uint8_t writeSingleCoil (void);
 uint8_t writeMultiCoils (void);
 
 void modbusException (uint8_t exceptioncode);
-
+uint16_t Get_Holding_Registers(uint8_t index);
+void Copy_Holding_Registers(uint8_t index,uint8_t index_coppy);
+void Reset_Tray(uint8_t index);
 #endif /* INC_MODBUSSLAVE_H_ */

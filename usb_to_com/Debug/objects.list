@@ -40,4 +40,3 @@
 "./modbus/delay.o"
 "./modbus/modbusSlave.o"
 "./modbus/modbus_crc.o"
-"./modbus/motor.o"

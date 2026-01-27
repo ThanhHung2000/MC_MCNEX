@@ -71,10 +71,10 @@ typedef struct {
 void Init_Timer_chanal(void);
 void Robot_Init(void);
 void  MC_Control_Interrupt(void);
+uint8_t MC_MoveLinear(int32_t posx,int32_t posy,int32_t posz,float freq_max );// thời điểm kết thúc gần bằng nhau tuyệt đối
 void MC_MoveAbsoluteTest(uint32_t posx,uint32_t posy,uint32_t posz, uint32_t freq);
-uint8_t MC_MoveLinear(int32_t posx,int32_t posy,int32_t posz,float freq_max );
-void MC_MoveAbsolute(MC_Axis_t* axis, int32_t pos, uint32_t speed);// mục đích Kích hoạt di chuyển đến vị trí tuyệt đối
-void MC_MoveRelative(MC_Axis_t* axis,int32_t distance,uint32_t freq );
 void MC_MoveHandle(uint8_t axis,uint8_t status, int dir);
-extern MC_Axis_t Rotbot_axis[NUM_AXIT_ROBOT];
+//uint8_t MC_MoveLinear(int32_t posx,int32_t posy,int32_t posz,float freq_max );
+
+//void MC_MoveHandle(uint8_t axis,uint8_t status, int dir);
 #endif /* INC_DRIVE_H_ */

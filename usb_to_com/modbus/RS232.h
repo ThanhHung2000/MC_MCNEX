@@ -41,21 +41,22 @@ typedef union {
 typedef union {
     struct {
 
-        uint8_t glass_1		: 1;
-        uint8_t glass_2		: 1;
-        uint8_t glass_3		: 1;
-        uint8_t Cover_1		: 1;
-        uint8_t Cover_2		: 1;
-        uint8_t Cover_3		: 1;
-        uint8_t save_glass	: 1;
-        uint8_t Save_Cover	: 1;
+    	uint16_t glass_1		: 1;
+    	uint16_t glass_2		: 1;
+    	uint16_t glass_3		: 1;
+    	uint16_t Cover_1		: 1;
+    	uint16_t Cover_2		: 1;
+    	uint16_t Cover_3		: 1;
+    	uint16_t save_glass	: 1;
+    	uint16_t Save_Cover	: 1;
+    	uint16_t Save_Tray	: 1;
     } bits;
-    uint8_t all;
+    uint16_t all;
 }Save_Tray_t;
 typedef union {
     struct {
-    	uint8_t Home :1;
-    	uint8_t Engine :1;
+    	uint8_t Main :1;
+    	uint8_t Motor :1;
         uint8_t reserved : 6;
 
     } bits;
@@ -63,18 +64,21 @@ typedef union {
 } Tab_Control_t;
 typedef union {
     struct {
-    	uint8_t Run 		:1;
-    	uint8_t Stop 		:1;
-    	uint8_t glass1		:1;
-    	uint8_t glass2		:1;
-    	uint8_t glass3		:1;
-    	uint8_t glass4		:1;
-        uint8_t Start_Button : 1;
-        uint8_t Scan_Button : 1;
+    	uint16_t ruber1_1 		:1;
+    	uint16_t ruber1_2 		:1;
+    	uint16_t ruber1_3	    :1;
+    	uint16_t tray1_1		:1;
+    	uint16_t tray1_2		:1;
+    	uint16_t tray1_3    	:1;
+    	uint16_t tray2_1		:1;
+    	uint16_t tray2_2		:1;
+    	uint16_t tray2_3		:1;
+    	uint16_t led_move		:1;
+
 
     } bits;
-    uint8_t all;
-} Home_Lamp_t;
+    uint16_t all;
+} Motor_Lamp_t;
 typedef union {
     struct {
     	uint8_t glass1 		:1;
@@ -99,7 +103,7 @@ extern uint16_t* Glass_Select;
 extern uint8_t* Lamp_glass_empty;
 extern uint16_t* Lamp_glass_select;
 extern Worker_Control_t* Worker_Control;
-extern Home_Lamp_t* Home_Lamp;
+extern Motor_Lamp_t* Motor_Lamp;
 extern Control_motor_t* Control_motor;
 extern Tab_Control_t* Tab;
 extern Save_Tray_t* Save_Tray;

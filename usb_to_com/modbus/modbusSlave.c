@@ -16,6 +16,25 @@ uint16_t Holding_Registers_Database[50]={0,};
 uint8_t Coils_Database[50]={0,};
 uint8_t Inputs_Database[50]={ 0,};
 uint16_t Input_Registers_Database[50]={0,};
+
+uint16_t Get_Holding_Registers(uint8_t index)
+{
+	if(index>50) return 0x00U;
+	return Holding_Registers_Database[index];
+}
+void Copy_Holding_Registers(uint8_t index,uint8_t index_coppy)
+{
+	Holding_Registers_Database[index_coppy]=Holding_Registers_Database[index];
+	Holding_Registers_Database[index_coppy+1]=Holding_Registers_Database[index+1];
+}
+void Set_bit_Coilt_lamp(uint8_t)
+{
+
+}
+void Reset_Tray(uint8_t index)
+{
+	Coils_Database[index] = 0x00U;
+}
 void sendData (uint8_t *data, int size)
 {
 	// we will calculate the CRC in this function itself

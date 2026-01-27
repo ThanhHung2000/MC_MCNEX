@@ -57,6 +57,9 @@ default.size.stdout \
 OBJDUMP_LIST += \
 usb_to_com.list \
 
+OBJCOPY_HEX += \
+usb_to_com.hex \
+
 
 # All Target
 all: main-build
@@ -80,12 +83,17 @@ usb_to_com.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+usb_to_com.hex: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O ihex $(EXECUTABLES) "usb_to_com.hex"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 # Other Targets
 clean:
-	-$(RM) default.size.stdout usb_to_com.elf usb_to_com.list usb_to_com.map
+	-$(RM) default.size.stdout usb_to_com.elf usb_to_com.hex usb_to_com.list usb_to_com.map
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_HEX)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'

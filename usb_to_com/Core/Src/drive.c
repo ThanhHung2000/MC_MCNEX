@@ -9,7 +9,7 @@
 #include "drive.h"
 #include <stdlib.h>
 #include "modbusSlave.h"
-
+#include "mgr_hmi.h"
 // Mảng chứa 46 giá trị Jerk (đơn vị: Hz/ms^2)
 // Tính theo công thức: (Fmax - 1000) / (200 * 401)
 // với jerk_table[0] tương ứng với Fmax=1000 Hz
@@ -30,12 +30,10 @@ const float triangle_array[TIME_RAMPING] = {
     3570, 3655, 3741, 3828, 3916, 4005, 4095, 4186, 4278, 4371, 4465, 4560, 4656, 4753, 4851, 4950, 5050
 };
 
-
-const uint16_t my_array[400]={0,};
 void Set_Direction_OX(uint8_t status);
 void Set_Direction_OY(uint8_t status);
 void Set_Direction_OZ(uint8_t status);
-MC_Axis_t Rotbot_axis[NUM_AXIT_ROBOT];
+static MC_Axis_t Rotbot_axis[NUM_AXIT_ROBOT];
 void Init_Timer_chanal(void)
 {
 	/* 1. Reset Counter */
@@ -104,6 +102,7 @@ void MC_MoveAbsolute(MC_Axis_t* axis, int32_t pos, uint32_t speed)// mục đíc
 
 	// 2. Gán các tham số mục tiêu
 	if(pos >= axis->max_axis) pos=axis->max_axis;
+	if(pos <= 0x00U) pos=0X00u;
 	axis->target_pos = pos;
 	axis->target_speed = speed;
 	axis->accel = jerk_table[(speed/(uint32_t)1000)-1] ;// speed là 1k đến 50k
@@ -158,7 +157,8 @@ void MC_MoveAbsoluteTest(uint32_t posx,uint32_t posy,uint32_t posz, uint32_t fre
 void MC_MoveRelative(MC_Axis_t* axis,int32_t distance,uint32_t freq )
 {
 	int32_t taget_move=0x00U;
-	taget_move = axis->current_pos + distance;
+
+	taget_move = (axis->current_pos + distance);
 	MC_MoveAbsolute(axis,taget_move,freq);
 }
 uint8_t MC_MoveHomeAbsolute(MC_Axis_t* axis)
@@ -187,22 +187,28 @@ uint8_t MC_MoveLinear(int32_t posx,int32_t posy,int32_t posz,float freq_max )// 
 }
 void MC_MoveHandle(uint8_t axis,uint8_t status, int dir)
 {
-	int32_t max_distance =0x00U;
 	switch(status)
 	{
-		case 0x01:// jogging
+		case STATUS_JOGGING_OXIS:// jogging
 		{
-			max_distance = dir>0 ? Rotbot_axis[axis].max_axis - Rotbot_axis[axis].current_pos : Rotbot_axis[axis].current_pos;
+			MC_MoveAbsolute(&Rotbot_axis[axis],dir*Rotbot_axis[axis].max_axis,10000);
+		}
+		break;
+		case STATUS_STEP_OXIS:// step
+		{
+			if(dir==0x00U)
+			{
+				int32_t value = (Rotbot_axis[axis].current_pos > 100U) ? Rotbot_axis[axis].current_pos - 100U : 0x00U;
 
-			MC_MoveRelative(&Rotbot_axis[axis],dir*max_distance,10000);//max 50kHz
+				MC_MoveAbsolute(&Rotbot_axis[axis],value,10000);
+			}
+			else
+			{
+				MC_MoveAbsolute(&Rotbot_axis[axis],Rotbot_axis[axis].current_pos + 100,10000);
+			}
 		}
 		break;
-		case 0x02:// step
-		{
-			//MC_MoveRelative(&Rotbot_axis[axis],dir*200,5000);
-		}
-		break;
-		case 0x03:// stop
+		case STATUS_STOP_OXIS:// stop
 		{
 			MC_Stop(&Rotbot_axis[axis]);
 		}
@@ -272,7 +278,7 @@ void Rotbot_controler(MC_Axis_t* axis)
     // CẬP NHẬT PHẦN CỨNG
     if (axis->current_speed > SET_SPEED_1000HZ || axis->busy==0x01)
     {
-         new_arr = (uint32_t)(1000000U / (uint32_t)(axis->target_speed)); // Giả sử Clock Timer 1MHz
+         new_arr = (uint32_t)(1000000U / (uint32_t)(axis->current_speed)); // Giả sử Clock Timer 1MHz
         __HAL_TIM_SET_AUTORELOAD(axis->htim, (new_arr-1));
         __HAL_TIM_SET_COMPARE(axis->htim, axis->channel, (new_arr / 2));
         curent_counter=axis->htim_counter->Instance->CNT;
@@ -308,7 +314,7 @@ void  MC_Control_Interrupt(void)
 {
 	if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0==0x01))
 	{
-		MC_Stop(&Rotbot_axis[0]);
+		//MC_Stop(&Rotbot_axis[0]);
 	}
 	for(int i=0;i<NUM_AXIT_ROBOT;i++)
 	{
